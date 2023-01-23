@@ -8,16 +8,37 @@ import { FormField, Loader } from '../components';
 
 const CreatePost = () => {
   const navigate  = useNavigate();
-  const [form, setform] = useState({
+  const [form, setForm] = useState({
     name:'',
     prompt: '',
     photo: '',
   });
+
   const [generatingImg, setgeneratingImg] = useState(false);
   const [loading, setloading] = useState(false);
 
-  const generateImage = () => {
+  const generateImage = async () => {
+    if(form.prompt){
+      try {
+        setgeneratingImg(true);
+        const response = await fetch('http://localhost:8080/api/v1/dalle',{ 
+          method:'POST',
+          headers:{
+            'Content-type': 'application/json', 
+          },
+          body: JSON.stringify({ prompt: form.prompt}),
+        })
+        const data = await response.json();
 
+        setForm({...form,photo:`data:image/jpeg;base64,${data.photo}`})
+      } catch (error) {
+        alert(error)
+      }finally{
+        setgeneratingImg(false);
+      }
+    }else{
+      alert('Please enter a prompt')
+    }
   }
 
   const handleSubmit = () => {
@@ -25,11 +46,12 @@ const CreatePost = () => {
   }
 
   const handleChange = (e) => {
-
+    setForm({ ...form, [e.target.name]: e.target.value }) 
   }
 
   const handleSurpriseMe = () => {
-
+    const randomPrompt = getRandomPrompt(form.prompt);
+    setForm({ ...form, prompt: randomPrompt})
   }
 
   return (
@@ -43,6 +65,7 @@ const CreatePost = () => {
           and share them with the community
         </p>
       </div>
+
       <form className="mt-16 max-w-3xl" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-5">
           <FormField 
@@ -65,7 +88,7 @@ const CreatePost = () => {
           />
           <div className="relative bg-gray-50 border border-gray-300 text-gray-900
           text-sm rounded-lg focus:ring-blue-500 
-          focus:border-blue-500  outline-none w-64 p-3
+          focus:border-blue-500 outline-none w-64 p-3
           h-64 flex justify-center items-center">
             {form.photo ? (
               <img src={form.photo} 
